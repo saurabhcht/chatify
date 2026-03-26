@@ -5,7 +5,7 @@ import ChatHeader from "./ChatHeader";
 import NoChatHistoryPlaceholder from "./NoChatHistoryPlaceholder";
 import MessageInput from "./MessageInput";
 import MessagesLoadingSkeleton from "./MessagesLoadingSkeleton";
-
+import AudioMessage from "./AudioMessage";
 function ChatContainer() {
   const {
     selectedUser,
@@ -50,10 +50,19 @@ function ChatContainer() {
                       : "bg-slate-800 text-slate-200"
                   }`}
                 >
-                  {msg.image && (
+                  {/* {msg.image && (
                     <img src={msg.image} alt="Shared" className="rounded-lg h-48 object-cover" />
                   )}
-                  {msg.text && <p className="mt-2">{msg.text}</p>}
+                  {msg.text && <p className="mt-2">{msg.text}</p>} */}
+
+                  {msg.image && (
+  <img src={msg.image} alt="Shared" className="rounded-lg h-48 object-cover" />
+)}
+
+{msg.text && <p className="mt-2">{msg.text}</p>}
+
+{/* 🎤 AUDIO MESSAGE */}
+{msg.audio && <AudioMessage audio={msg.audio} />}
                   <p className="text-xs mt-1 opacity-75 flex items-center gap-1">
                     {new Date(msg.createdAt).toLocaleTimeString(undefined, {
                       hour: "2-digit",
