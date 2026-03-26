@@ -34,45 +34,107 @@ export const getMessagesByUserId = async (req, res) => {
   }
 };
 
+// export const sendMessage = async (req, res) => {
+//   try {
+//     const { text, image } = req.body;
+//     const { id: receiverId } = req.params;
+//     const senderId = req.user._id;
+
+//     if (!text && !image) {
+//       return res.status(400).json({ message: "Text or image is required." });
+//     }
+//     if (senderId.equals(receiverId)) {
+//       return res.status(400).json({ message: "Cannot send messages to yourself." });
+//     }
+//     const receiverExists = await User.exists({ _id: receiverId });
+//     if (!receiverExists) {
+//       return res.status(404).json({ message: "Receiver not found." });
+//     }
+
+//     let imageUrl;
+//     if (image) {
+//       // upload base64 image to cloudinary
+//       const uploadResponse = await cloudinary.uploader.upload(image);
+//       imageUrl = uploadResponse.secure_url;
+//     }
+
+//     const newMessage = new Message({
+//       senderId,
+//       receiverId,
+//       text,
+//       image: imageUrl,
+//     });
+
+//     await newMessage.save();
+
+//     const receiverSocketId = getReceiverSocketId(receiverId);
+//     if (receiverSocketId) {
+//       io.to(receiverSocketId).emit("newMessage", newMessage);
+//     }
+
+//     res.status(201).json(newMessage);
+//   } catch (error) {
+//     console.log("Error in sendMessage controller: ", error.message);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// };
+
 export const sendMessage = async (req, res) => {
   try {
     const { text, image } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
-    if (!text && !image) {
-      return res.status(400).json({ message: "Text or image is required." });
+    // ✅ include audio condition
+    if (!text && !image && !req.file) {
+      return res.status(400).json({ message: "Text, image or audio is required." });
     }
+
     if (senderId.equals(receiverId)) {
       return res.status(400).json({ message: "Cannot send messages to yourself." });
     }
+
     const receiverExists = await User.exists({ _id: receiverId });
     if (!receiverExists) {
       return res.status(404).json({ message: "Receiver not found." });
     }
 
     let imageUrl;
+    let audioUrl;
+
+    // ✅ IMAGE (Cloudinary)
     if (image) {
-      // upload base64 image to cloudinary
       const uploadResponse = await cloudinary.uploader.upload(image);
       imageUrl = uploadResponse.secure_url;
     }
+
+    // ✅ AUDIO (Multer local upload)
+   if (req.file) {
+  const uploadResponse = await cloudinary.uploader.upload(req.file.path, {
+    resource_type: "video", // ✅ IMPORTANT for audio
+  });
+
+  audioUrl = uploadResponse.secure_url;
+}
 
     const newMessage = new Message({
       senderId,
       receiverId,
       text,
       image: imageUrl,
+      audio: audioUrl, // ✅ ADD THIS
     });
 
     await newMessage.save();
 
+    // ✅ SOCKET EMIT (unchanged)
     const receiverSocketId = getReceiverSocketId(receiverId);
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("newMessage", newMessage);
     }
 
     res.status(201).json(newMessage);
+
   } catch (error) {
     console.log("Error in sendMessage controller: ", error.message);
     res.status(500).json({ error: "Internal server error" });
