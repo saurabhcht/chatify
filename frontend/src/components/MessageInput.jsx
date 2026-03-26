@@ -280,7 +280,7 @@ const stopRecording = () => {
         <div className="text-red-500 text-sm mb-2">🔴 Recording...</div>
       )}
 
-      <form onSubmit={handleSendMessage} className="max-w-3xl mx-auto flex space-x-4">
+      <form onSubmit={handleSendMessage} className="max-w-3xl mx-auto flex items-center gap-2">
 
         {/* TEXT INPUT */}
         <input
@@ -290,7 +290,7 @@ const stopRecording = () => {
             setText(e.target.value);
             isSoundEnabled && playRandomKeyStrokeSound();
           }}
-          className="flex-1 bg-slate-800/50 text-white border border-slate-700/50 rounded-lg py-2 px-4"
+          className="flex-1 min-w-0 bg-slate-800/50 text-white border border-slate-700/50 rounded-lg py-2 px-3 text-sm"
           placeholder="Type your message..."
         />
 
