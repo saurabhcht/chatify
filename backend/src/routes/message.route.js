@@ -8,6 +8,7 @@ import {
 } from "../controllers/message.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import { arcjetProtection } from "../middleware/arcjet.middleware.js";
+import { editMessage, deleteMessage } from "../controllers/message.controller.js";
 
 const router = express.Router();
 
@@ -37,5 +38,9 @@ router.get("/:id", getMessagesByUserId);
 
 // ✅ MODIFY THIS LINE
 router.post("/send/:id", upload.single("audio"), sendMessage);
+
+router.put("/edit/:messageId", protectRoute, editMessage);
+
+router.delete("/delete/:messageId", protectRoute, deleteMessage);
 
 export default router;

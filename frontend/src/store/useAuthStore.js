@@ -27,35 +27,46 @@ export const useAuthStore = create((set, get) => ({
   },
 
   signup: async (data) => {
-    set({ isSigningUp: true });
-    try {
-      const res = await axiosInstance.post("/auth/signup", data);
-      set({ authUser: res.data });
+  set({ isSigningUp: true });
+  try {
+    const res = await axiosInstance.post("/auth/signup", data);
 
-      toast.success("Account created successfully!");
-      get().connectSocket();
-    } catch (error) {
-      toast.error(error.response.data.message);
-    } finally {
-      set({ isSigningUp: false });
-    }
-  },
+    localStorage.setItem("token", res.data.token); // 🔥 ADD THIS
+
+    set({ authUser: res.data.user });
+
+    toast.success("Account created successfully!");
+
+    get().connectSocket();
+  } catch (error) {
+    toast.error(error.response.data.message);
+  } finally {
+    set({ isSigningUp: false });
+  }
+},
+
 
   login: async (data) => {
-    set({ isLoggingIn: true });
-    try {
-      const res = await axiosInstance.post("/auth/login", data);
-      set({ authUser: res.data });
+  set({ isLoggingIn: true });
+  try {
+    const res = await axiosInstance.post("/auth/login", data);
 
-      toast.success("Logged in successfully");
+    // 🔥 SAVE TOKEN
+    localStorage.setItem("token", res.data.token);
 
-      get().connectSocket();
-    } catch (error) {
-      toast.error(error.response.data.message);
-    } finally {
-      set({ isLoggingIn: false });
-    }
-  },
+    set({ authUser: res.data.user });
+
+    toast.success("Logged in successfully");
+
+    get().connectSocket();
+  } catch (error) {
+    toast.error(error.response.data.message);
+  } finally {
+    set({ isLoggingIn: false });
+  }
+},
+
+  
 
   logout: async () => {
     try {
@@ -80,25 +91,66 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  connectSocket: () => {
-    const { authUser } = get();
-    if (!authUser || get().socket?.connected) return;
+  // connectSocket: () => {
+  //   const { authUser } = get();
+  //   if (!authUser || get().socket?.connected) return;
 
-    const socket = io(BASE_URL, {
-      withCredentials: true, // this ensures cookies are sent with the connection
-    });
+  //   const socket = io(BASE_URL, {
+  //     withCredentials: true, // this ensures cookies are sent with the connection
+  //   });
 
-    socket.connect();
+  //   socket.connect();
 
-    set({ socket });
+  //   set({ socket });
 
-    // listen for online users event
-    socket.on("getOnlineUsers", (userIds) => {
-      set({ onlineUsers: userIds });
-    });
-  },
+  //   // listen for online users event
+  //   socket.on("getOnlineUsers", (userIds) => {
+  //     set({ onlineUsers: userIds });
+  //   });
+  // },
 
-  disconnectSocket: () => {
-    if (get().socket?.connected) get().socket.disconnect();
-  },
+connectSocket: () => {
+  const { authUser } = get();
+
+  if (!authUser) return;
+
+  if (get().socket?.connected) return;
+
+  const token = localStorage.getItem("token"); // 🔥 GET TOKEN
+
+  const socket = io(BASE_URL, {
+    transports: ["websocket"],
+    auth: {
+      token, // 🔥 SEND TOKEN
+    },
+  });
+
+  socket.on("connect", () => {
+    console.log("✅ Socket connected:", socket.id);
+  });
+
+  socket.on("connect_error", (err) => {
+    console.error("❌ Socket error:", err.message);
+  });
+
+  socket.on("getOnlineUsers", (userIds) => {
+    set({ onlineUsers: userIds });
+  });
+
+  set({ socket });
+},
+disconnectSocket: () => {
+  const socket = get().socket;
+
+  if (socket?.connected) {
+    socket.disconnect();
+    console.log("🔌 Socket disconnected");
+  }
+
+  set({ socket: null });
+},
+//   disconnectSocket: () => {
+//     if (get().socket?.connected) get().socket.disconnect();
+//   },
 }));
+

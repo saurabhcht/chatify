@@ -28,6 +28,22 @@ const userSocketMap = {}; // {userId:socketId}
 io.on("connection", (socket) => {
   console.log("A user connected", socket.user.fullName);
 
+  socket.on("typing", ({ senderId, receiverId }) => {
+  const receiverSocketId = userSocketMap[receiverId];
+
+  if (receiverSocketId) {
+    io.to(receiverSocketId).emit("typing", { senderId });
+  }
+});
+
+socket.on("stopTyping", ({ senderId, receiverId }) => {
+  const receiverSocketId = userSocketMap[receiverId];
+
+  if (receiverSocketId) {
+    io.to(receiverSocketId).emit("stopTyping", { senderId });
+  }
+});
+
   const userId = socket.userId;
   userSocketMap[userId] = socket.id;
 

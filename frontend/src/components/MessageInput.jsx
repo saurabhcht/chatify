@@ -106,11 +106,14 @@
 //   );
 // }
 // export default MessageInput;
+
+
 import { useRef, useState } from "react";
 import useKeyboardSound from "../hooks/useKeyboardSound";
 import { useChatStore } from "../store/useChatStore";
 import toast from "react-hot-toast";
 import { ImageIcon, SendIcon, XIcon, MicIcon } from "lucide-react";
+import { useAuthStore } from "../store/useAuthStore";
 
 function MessageInput() {
   const { playRandomKeyStrokeSound } = useKeyboardSound();
@@ -120,9 +123,11 @@ function MessageInput() {
   const audioChunksRef = useRef([]);
   const fileInputRef = useRef(null);
   const mediaRecorderRef = useRef(null);
-  
 
-  const { sendMessage, isSoundEnabled } = useChatStore();
+  
+const { sendMessage, isSoundEnabled, selectedUser } = useChatStore();
+const { socket, authUser } = useAuthStore();
+
 
   // 📩 SEND TEXT / IMAGE
   const handleSendMessage = (e) => {
@@ -286,10 +291,26 @@ const stopRecording = () => {
         <input
           type="text"
           value={text}
+          
           onChange={(e) => {
-            setText(e.target.value);
-            isSoundEnabled && playRandomKeyStrokeSound();
-          }}
+  setText(e.target.value);
+  isSoundEnabled && playRandomKeyStrokeSound();
+
+  if (!socket || !selectedUser) return;
+
+  socket.emit("typing", {
+    senderId: authUser._id,
+    receiverId: selectedUser._id,
+  });
+
+  setTimeout(() => {
+    socket.emit("stopTyping", {
+      senderId: authUser._id,
+      receiverId: selectedUser._id,
+    });
+  }, 1500);
+}}
+
           className="flex-1 min-w-0 bg-slate-800/50 text-white border border-slate-700/50 rounded-lg py-2 px-3 text-sm"
           placeholder="Type your message..."
         />
