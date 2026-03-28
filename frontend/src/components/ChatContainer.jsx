@@ -288,9 +288,20 @@ function ChatContainer() {
 }, [selectedUser]);
 
 
+
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+
+useEffect(() => {
+  if (!selectedUser || !socket) return;
+
+  socket.emit("messageSeen", {
+    senderId: selectedUser._id,
+  });
+
+}, [messages]);
 
   // 👇 LISTEN FOR TYPING EVENTS
   useEffect(() => {
@@ -317,6 +328,7 @@ function ChatContainer() {
     return () => {
       socket.off("typing");
       socket.off("stopTyping");
+      socket.off("messagesSeen");
     };
   }, [socket]);
 
