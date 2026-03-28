@@ -261,14 +261,32 @@ function ChatContainer() {
   const { authUser, socket } = useAuthStore();
   const messageEndRef = useRef(null);
 
+  // useEffect(() => {
+  //   if (!selectedUser) return;
+
+  //   getMessagesByUserId(selectedUser._id);
+  //   subscribeToMessages();
+
+  //   return () => unsubscribeFromMessages();
+  // }, [selectedUser]);
+
+
   useEffect(() => {
-    if (!selectedUser) return;
+  if (!selectedUser) return;
 
-    getMessagesByUserId(selectedUser._id);
-    subscribeToMessages();
+  getMessagesByUserId(selectedUser._id);
+  subscribeToMessages();
 
-    return () => unsubscribeFromMessages();
-  }, [selectedUser]);
+  // MARK MESSAGES AS SEEN
+  if (socket) {
+    socket.emit("messageSeen", {
+      senderId: selectedUser._id,
+    });
+  }
+
+  return () => unsubscribeFromMessages();
+}, [selectedUser]);
+
 
   useEffect(() => {
     messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -281,6 +299,16 @@ function ChatContainer() {
     socket.on("typing", () => {
       setIsTyping(true);
     });
+
+    socket.on("messagesSeen", () => {
+  useChatStore.setState((state) => ({
+    messages: state.messages.map((msg) => ({
+      ...msg,
+      seen: true,
+    })),
+  }));
+});
+
 
     socket.on("stopTyping", () => {
       setIsTyping(false);
@@ -376,6 +404,14 @@ function ChatContainer() {
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
+
+                    {/* MESSAGE TICK */}
+                    {msg.senderId === authUser._id && (
+                     <span className={msg.seen ? "text-blue-400 ml-1" : "ml-1"}>
+                      {msg.seen ? "✔✔" : "✔"}
+                      </span>
+                         )}
+
                   </p>
                 </div>
               </div>

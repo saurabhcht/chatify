@@ -9,7 +9,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: [ENV.CLIENT_URL],
+    origin: ENV.CLIENT_URL,
     credentials: true,
   },
 });
@@ -46,6 +46,14 @@ socket.on("stopTyping", ({ senderId, receiverId }) => {
 
   const userId = socket.userId;
   userSocketMap[userId] = socket.id;
+  // MESSAGE SEEN EVENT
+socket.on("messageSeen", ({ senderId }) => {
+  const senderSocketId = userSocketMap[senderId];
+
+  if (senderSocketId) {
+    io.to(senderSocketId).emit("messagesSeen");
+  }
+});
 
   // io.emit() is used to send events to all connected clients
   io.emit("getOnlineUsers", Object.keys(userSocketMap));
