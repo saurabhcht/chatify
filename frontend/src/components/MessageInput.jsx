@@ -108,12 +108,14 @@
 // export default MessageInput;
 
 
-import { useRef, useState } from "react";
+import { useRef, useState , useEffect} from "react";
 import useKeyboardSound from "../hooks/useKeyboardSound";
 import { useChatStore } from "../store/useChatStore";
 import toast from "react-hot-toast";
 import { ImageIcon, SendIcon, XIcon, MicIcon } from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
+import { correctText } from "../lib/textCorrector";
+
 
 function MessageInput() {
   const { playRandomKeyStrokeSound } = useKeyboardSound();
@@ -123,28 +125,79 @@ function MessageInput() {
   const audioChunksRef = useRef([]);
   const fileInputRef = useRef(null);
   const mediaRecorderRef = useRef(null);
-
-  
 const { sendMessage, isSoundEnabled, selectedUser } = useChatStore();
 const { socket, authUser } = useAuthStore();
+const [typingText, setTypingText] = useState("");
+const [correctedPreview, setCorrectedPreview] = useState("");
+
+
+// useEffect(() => {
+//   const timer = setTimeout(async () => {
+//     if (typingText.trim()) {
+//       const corrected = await correctText(typingText);
+//       setCorrectedPreview(corrected);
+//     }
+//   }, 800);
+
+//   return () => clearTimeout(timer);
+// }, [typingText]);
+
+
+useEffect(() => {
+  const timer = setTimeout(async () => {
+    if (typingText.trim().length > 3) { // ✅ FIX
+      const corrected = await correctText(typingText);
+      setCorrectedPreview(corrected);
+    }
+  }, 800);
+
+  return () => clearTimeout(timer);
+}, [typingText]);
+
+
 
 
   // 📩 SEND TEXT / IMAGE
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    if (!text.trim() && !imagePreview) return;
+  // const handleSendMessage = (e) => {
+  //   e.preventDefault();
+  //   if (!text.trim() && !imagePreview) return;
 
-    if (isSoundEnabled) playRandomKeyStrokeSound();
+  //   if (isSoundEnabled) playRandomKeyStrokeSound();
 
-    sendMessage({
-      text: text.trim(),
-      image: imagePreview,
-    });
+  //   sendMessage({
+  //     text: text.trim(),
+  //     image: imagePreview,
+  //   });
 
-    setText("");
-    setImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
+  //   setText("");
+  //   setImagePreview(null);
+  //   if (fileInputRef.current) fileInputRef.current.value = "";
+  // };
+
+
+const handleSendMessage = async (e) => {
+  e.preventDefault();
+
+  if (!text.trim() && !imagePreview) return;
+
+  // ✅ AI correction
+  const correctedText = await correctText(text.trim());
+
+  if (isSoundEnabled) playRandomKeyStrokeSound();
+
+  sendMessage({
+    text: correctedText,
+    image: imagePreview,
+  });
+
+  setText("");
+setTypingText(""); // 👈 ADD THIS
+setCorrectedPreview(""); // 👈 ADD THIS
+setImagePreview(null);
+
+  if (fileInputRef.current) fileInputRef.current.value = "";
+};
+
 
   // 🖼 IMAGE
   const handleImageChange = (e) => {
@@ -164,54 +217,6 @@ const { socket, authUser } = useAuthStore();
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // 🎤 START RECORDING
-  // START RECORDING
-// const startRecording = async () => {
-//   try {
-//     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-//     const recorder = new MediaRecorder(stream, {
-//     mimeType: "audio/webm;codecs=opus",
-//   });
-//     mediaRecorderRef.current = recorder;
-
-//     audioChunksRef.current = []; // reset
-
-//     recorder.ondataavailable = (e) => {
-//       audioChunksRef.current.push(e.data);
-//     };
-
-//     recorder.onstop = async () => {
-//       const blob = new Blob(audioChunksRef.current, {
-//   type: "audio/webm;codecs=opus",
-// });
-
-//       const formData = new FormData();
-//       formData.append("audio", blob);
-//       console.log("Blob size:", blob.size);
-
-//       // ✅ IMPORTANT: use your store
-//       await sendMessage({
-//         audio: blob,
-//       });
-
-//       console.log("Audio sent"); // debug
-//     };
-
-//     recorder.start();
-//     setRecording(true);
-//   } catch (err) {
-//     console.log(err);
-//   }
-// };
-
-// // STOP RECORDING
-// const stopRecording = () => {
-//   if (mediaRecorderRef.current) {
-//     mediaRecorderRef.current.stop();
-//     setRecording(false);
-//   }
-// };
 
 const startTimeRef = useRef(0);
 
@@ -290,10 +295,36 @@ const stopRecording = () => {
         {/* TEXT INPUT */}
         <input
           type="text"
-          value={text}
+//           value={text}
           
-          onChange={(e) => {
-  setText(e.target.value);
+//           onChange={(e) => {
+//   setText(e.target.value);
+//   isSoundEnabled && playRandomKeyStrokeSound();
+
+//   if (!socket || !selectedUser) return;
+
+//   socket.emit("typing", {
+//     senderId: authUser._id,
+//     receiverId: selectedUser._id,
+//   });
+
+//   setTimeout(() => {
+//     socket.emit("stopTyping", {
+//       senderId: authUser._id,
+//       receiverId: selectedUser._id,
+//     });
+//   }, 1500);
+// }}
+
+
+value={typingText}
+
+onChange={(e) => {
+  const value = e.target.value;
+
+  setTypingText(value);   // 👈 for live correction
+  setText(value);         // 👈 keep original logic
+
   isSoundEnabled && playRandomKeyStrokeSound();
 
   if (!socket || !selectedUser) return;
@@ -311,9 +342,12 @@ const stopRecording = () => {
   }, 1500);
 }}
 
+
           className="flex-1 min-w-0 bg-slate-800/50 text-white border border-slate-700/50 rounded-lg py-2 px-3 text-sm"
           placeholder="Type your message..."
         />
+
+        
 
         {/* IMAGE INPUT */}
         <input
@@ -359,6 +393,21 @@ const stopRecording = () => {
         </button>
 
       </form>
+
+{correctedPreview &&
+  correctedPreview !== typingText && (
+    <p
+      className="text-gray-400 text-xs mt-1 ml-1 cursor-pointer hover:text-white"
+      onClick={() => {
+        setTypingText(correctedPreview);
+        setText(correctedPreview);
+        setCorrectedPreview("");
+      }}
+    >
+      Did you mean: {correctedPreview}
+    </p>
+)}
+      
     </div>
   );
 }
