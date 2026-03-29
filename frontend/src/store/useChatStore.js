@@ -351,6 +351,200 @@
 
 
 
+// import { create } from "zustand";
+// import { axiosInstance } from "../lib/axios";
+// import toast from "react-hot-toast";
+// import { useAuthStore } from "./useAuthStore";
+
+// export const useChatStore = create((set, get) => ({
+//   allContacts: [],
+//   chats: [],
+//   messages: [],
+//   activeTab: "chats",
+//   selectedUser: null,
+//   isUsersLoading: false,
+//   isMessagesLoading: false,
+//   isTyping: false, // ✅ typing state
+
+//   isSoundEnabled: JSON.parse(localStorage.getItem("isSoundEnabled")) === true,
+
+//   // ✅ set typing
+//   setIsTyping: (value) => set({ isTyping: value }),
+
+//   toggleSound: () => {
+//     localStorage.setItem("isSoundEnabled", !get().isSoundEnabled);
+//     set({ isSoundEnabled: !get().isSoundEnabled });
+//   },
+
+//   setActiveTab: (tab) => set({ activeTab: tab }),
+//   setSelectedUser: (selectedUser) => set({ selectedUser }),
+
+//   getAllContacts: async () => {
+//     set({ isUsersLoading: true });
+//     try {
+//       const res = await axiosInstance.get("/messages/contacts");
+//       set({ allContacts: res.data });
+//     } catch (error) {
+//       toast.error(error.response?.data?.message);
+//     } finally {
+//       set({ isUsersLoading: false });
+//     }
+//   },
+
+//   getMyChatPartners: async () => {
+//     set({ isUsersLoading: true });
+//     try {
+//       const res = await axiosInstance.get("/messages/chats");
+//       set({ chats: res.data });
+//     } catch (error) {
+//       toast.error(error.response?.data?.message);
+//     } finally {
+//       set({ isUsersLoading: false });
+//     }
+//   },
+
+//   getMessagesByUserId: async (userId) => {
+//     set({ isMessagesLoading: true });
+//     try {
+//       const res = await axiosInstance.get(`/messages/${userId}`);
+//       set({ messages: res.data });
+//     } catch (error) {
+//       toast.error(error.response?.data?.message || "Something went wrong");
+//     } finally {
+//       set({ isMessagesLoading: false });
+//     }
+//   },
+
+//   // SEND MESSAGE
+//   sendMessage: async (messageData) => {
+//     const { selectedUser, messages } = get();
+//     const { authUser } = useAuthStore.getState();
+
+//     const tempId = `temp-${Date.now()}`;
+
+//     const optimisticMessage = {
+//       _id: tempId,
+//       senderId: authUser._id,
+//       receiverId: selectedUser._id,
+//       text: messageData.text,
+//       image: messageData.image,
+//       audio: messageData.audio ? URL.createObjectURL(messageData.audio) : null,
+//       createdAt: new Date().toISOString(),
+//       isOptimistic: true,
+//     };
+
+//     set({ messages: [...messages, optimisticMessage] });
+
+//     try {
+//       let dataToSend;
+
+//       if (messageData.audio) {
+//         dataToSend = new FormData();
+
+//         if (messageData.text) dataToSend.append("text", messageData.text);
+//         if (messageData.image) dataToSend.append("image", messageData.image);
+//         dataToSend.append("audio", messageData.audio);
+//       } else {
+//         dataToSend = messageData;
+//       }
+
+//       const res = await axiosInstance.post(
+//         `/messages/send/${selectedUser._id}`,
+//         dataToSend,
+//         {
+//           headers: messageData.audio
+//             ? { "Content-Type": "multipart/form-data" }
+//             : {},
+//         }
+//       );
+
+//       set({
+//         messages: get().messages.map((msg) =>
+//           msg._id === tempId ? res.data : msg
+//         ),
+//       });
+
+//     } catch (error) {
+//       set({ messages: messages });
+//       toast.error(error.response?.data?.message || "Something went wrong");
+//     }
+//   },
+
+//   subscribeToMessages: () => {
+//     const { selectedUser, isSoundEnabled } = get();
+//     if (!selectedUser) return;
+
+//     const socket = useAuthStore.getState().socket;
+
+//     // ✅ new message
+//     socket.on("newMessage", (newMessage) => {
+//       const isMessageSentFromSelectedUser =
+//         newMessage.senderId === selectedUser._id;
+
+//       if (!isMessageSentFromSelectedUser) return;
+
+//       const currentMessages = get().messages;
+//       set({ messages: [...currentMessages, newMessage] });
+
+//       if (isSoundEnabled) {
+//         const notificationSound = new Audio("/sounds/notification.mp3");
+//         notificationSound.currentTime = 0;
+//         notificationSound.play().catch(() => {});
+//       }
+//     });
+
+//     // ✅ typing indicator
+//     socket.on("typing", () => {
+//       set({ isTyping: true });
+//     });
+
+//     socket.on("stopTyping", () => {
+//       set({ isTyping: false });
+//     });
+//   },
+
+//   unsubscribeFromMessages: () => {
+//     const socket = useAuthStore.getState().socket;
+//     socket.off("newMessage");
+//     socket.off("typing");
+//     socket.off("stopTyping");
+//   },
+
+//   // EDIT MESSAGE
+//   editMessage: async (messageId, text) => {
+//     try {
+//       const res = await axiosInstance.put(`/messages/edit/${messageId}`, { text });
+
+//       set((state) => ({
+//         messages: state.messages.map((msg) =>
+//           msg._id === messageId ? res.data : msg
+//         ),
+//       }));
+
+//     } catch (error) {
+//       console.log("Edit message error:", error);
+//       toast.error("Failed to edit message");
+//     }
+//   },
+
+//   // DELETE MESSAGE
+//   deleteMessage: async (messageId) => {
+//     try {
+//       await axiosInstance.delete(`/messages/delete/${messageId}`);
+
+//       set((state) => ({
+//         messages: state.messages.filter((msg) => msg._id !== messageId),
+//       }));
+
+//     } catch (error) {
+//       console.log("Delete message error:", error);
+//       toast.error("Failed to delete message");
+//     }
+//   },
+
+// }));
+
+
 import { create } from "zustand";
 import { axiosInstance } from "../lib/axios";
 import toast from "react-hot-toast";
@@ -364,11 +558,10 @@ export const useChatStore = create((set, get) => ({
   selectedUser: null,
   isUsersLoading: false,
   isMessagesLoading: false,
-  isTyping: false, // ✅ typing state
+  isTyping: false,
 
   isSoundEnabled: JSON.parse(localStorage.getItem("isSoundEnabled")) === true,
 
-  // ✅ set typing
   setIsTyping: (value) => set({ isTyping: value }),
 
   toggleSound: () => {
@@ -379,6 +572,7 @@ export const useChatStore = create((set, get) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
   setSelectedUser: (selectedUser) => set({ selectedUser }),
 
+  // ================== USERS ==================
   getAllContacts: async () => {
     set({ isUsersLoading: true });
     try {
@@ -415,7 +609,7 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
-  // SEND MESSAGE
+  // ================== SEND MESSAGE ==================
   sendMessage: async (messageData) => {
     const { selectedUser, messages } = get();
     const { authUser } = useAuthStore.getState();
@@ -428,7 +622,9 @@ export const useChatStore = create((set, get) => ({
       receiverId: selectedUser._id,
       text: messageData.text,
       image: messageData.image,
-      audio: messageData.audio ? URL.createObjectURL(messageData.audio) : null,
+      audio: messageData.audio
+        ? URL.createObjectURL(messageData.audio)
+        : null,
       createdAt: new Date().toISOString(),
       isOptimistic: true,
     };
@@ -440,7 +636,6 @@ export const useChatStore = create((set, get) => ({
 
       if (messageData.audio) {
         dataToSend = new FormData();
-
         if (messageData.text) dataToSend.append("text", messageData.text);
         if (messageData.image) dataToSend.append("image", messageData.image);
         dataToSend.append("audio", messageData.audio);
@@ -463,71 +658,95 @@ export const useChatStore = create((set, get) => ({
           msg._id === tempId ? res.data : msg
         ),
       });
-
     } catch (error) {
       set({ messages: messages });
       toast.error(error.response?.data?.message || "Something went wrong");
     }
   },
 
+  // ================== SOCKET ==================
   subscribeToMessages: () => {
     const { selectedUser, isSoundEnabled } = get();
     if (!selectedUser) return;
 
     const socket = useAuthStore.getState().socket;
 
-    // ✅ new message
+    // 🔥 prevent duplicate listeners
+    socket.off("newMessage");
+    socket.off("typing");
+    socket.off("stopTyping");
+    socket.off("messageUpdated");
+    socket.off("messageDeleted");
+
+    // ✅ NEW MESSAGE
     socket.on("newMessage", (newMessage) => {
-      const isMessageSentFromSelectedUser =
+      const isFromSelectedUser =
         newMessage.senderId === selectedUser._id;
 
-      if (!isMessageSentFromSelectedUser) return;
+      if (!isFromSelectedUser) return;
 
-      const currentMessages = get().messages;
-      set({ messages: [...currentMessages, newMessage] });
+      set((state) => ({
+        messages: [...state.messages, newMessage],
+      }));
 
       if (isSoundEnabled) {
-        const notificationSound = new Audio("/sounds/notification.mp3");
-        notificationSound.currentTime = 0;
-        notificationSound.play().catch(() => {});
+        const sound = new Audio("/sounds/notification.mp3");
+        sound.currentTime = 0;
+        sound.play().catch(() => {});
       }
     });
 
-    // ✅ typing indicator
-    socket.on("typing", () => {
-      set({ isTyping: true });
+    // ✅ EDIT MESSAGE (🔥 FIX)
+    socket.on("messageUpdated", (updatedMessage) => {
+      set((state) => ({
+        messages: state.messages.map((msg) =>
+          msg._id === updatedMessage._id ? updatedMessage : msg
+        ),
+      }));
     });
 
-    socket.on("stopTyping", () => {
-      set({ isTyping: false });
+    // ✅ DELETE MESSAGE (🔥 FIX)
+    socket.on("messageDeleted", (messageId) => {
+      set((state) => ({
+        messages: state.messages.filter((msg) => msg._id !== messageId),
+      }));
     });
+
+    // ✅ TYPING
+    socket.on("typing", () => set({ isTyping: true }));
+    socket.on("stopTyping", () => set({ isTyping: false }));
   },
 
   unsubscribeFromMessages: () => {
     const socket = useAuthStore.getState().socket;
+
     socket.off("newMessage");
     socket.off("typing");
     socket.off("stopTyping");
+    socket.off("messageUpdated");
+    socket.off("messageDeleted");
   },
 
-  // EDIT MESSAGE
+  // ================== EDIT ==================
   editMessage: async (messageId, text) => {
     try {
-      const res = await axiosInstance.put(`/messages/edit/${messageId}`, { text });
+      const res = await axiosInstance.put(
+        `/messages/edit/${messageId}`,
+        { text }
+      );
 
       set((state) => ({
         messages: state.messages.map((msg) =>
           msg._id === messageId ? res.data : msg
         ),
       }));
-
     } catch (error) {
-      console.log("Edit message error:", error);
+      console.log("Edit error:", error);
       toast.error("Failed to edit message");
     }
   },
 
-  // DELETE MESSAGE
+  // ================== DELETE ==================
   deleteMessage: async (messageId) => {
     try {
       await axiosInstance.delete(`/messages/delete/${messageId}`);
@@ -535,11 +754,9 @@ export const useChatStore = create((set, get) => ({
       set((state) => ({
         messages: state.messages.filter((msg) => msg._id !== messageId),
       }));
-
     } catch (error) {
-      console.log("Delete message error:", error);
+      console.log("Delete error:", error);
       toast.error("Failed to delete message");
     }
   },
-
 }));

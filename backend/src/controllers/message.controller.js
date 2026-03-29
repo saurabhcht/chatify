@@ -79,6 +79,31 @@ export const getMessagesByUserId = async (req, res) => {
 //   }
 // };
 
+// export const editMessage = async (req, res) => {
+//   try {
+//     const { messageId } = req.params;
+//     const { text } = req.body;
+
+//     const message = await Message.findById(messageId);
+
+//     if (!message) {
+//       return res.status(404).json({ error: "Message not found" });
+//     }
+
+//     message.text = text;
+//     message.edited = true;
+
+//     await message.save();
+
+//     res.status(200).json(message);
+//   } catch (error) {
+//     console.log("Edit message error", error);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// };
+
+
+
 export const editMessage = async (req, res) => {
   try {
     const { messageId } = req.params;
@@ -95,12 +120,42 @@ export const editMessage = async (req, res) => {
 
     await message.save();
 
+    // 🔥 SOCKET EMIT (IMPORTANT)
+    const receiverSocketId = getReceiverSocketId(message.receiverId);
+    const senderSocketId = getReceiverSocketId(message.senderId);
+
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("messageUpdated", message);
+    }
+
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("messageUpdated", message);
+    }
+
     res.status(200).json(message);
   } catch (error) {
     console.log("Edit message error", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+// export const deleteMessage = async (req, res) => {
+//   try {
+//     const { messageId } = req.params;
+
+//     const message = await Message.findByIdAndDelete(messageId);
+
+//     if (!message) {
+//       return res.status(404).json({ error: "Message not found" });
+//     }
+
+//     res.status(200).json({ message: "Message deleted" });
+
+//   } catch (error) {
+//     console.log("Delete message error", error);
+//     res.status(500).json({ error: "Internal server error" });
+//   }
+// };
 
 
 export const deleteMessage = async (req, res) => {
@@ -113,14 +168,24 @@ export const deleteMessage = async (req, res) => {
       return res.status(404).json({ error: "Message not found" });
     }
 
-    res.status(200).json({ message: "Message deleted" });
+    // 🔥 SOCKET EMIT
+    const receiverSocketId = getReceiverSocketId(message.receiverId);
+    const senderSocketId = getReceiverSocketId(message.senderId);
 
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("messageDeleted", messageId);
+    }
+
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("messageDeleted", messageId);
+    }
+
+    res.status(200).json({ message: "Message deleted" });
   } catch (error) {
     console.log("Delete message error", error);
     res.status(500).json({ error: "Internal server error" });
   }
 };
-
 
 
 export const sendMessage = async (req, res) => {

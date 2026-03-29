@@ -26,47 +26,121 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  signup: async (data) => {
+//   signup: async (data) => {
+//   set({ isSigningUp: true });
+//   try {
+//     const res = await axiosInstance.post("/auth/signup", data);
+
+//     // localStorage.setItem("token", res.data.token); // 🔥 ADD THIS
+
+//     set({ authUser: res.data.user });
+
+//     toast.success("Account created successfully!");
+
+//     get().connectSocket();
+//   } catch (error) {
+//     toast.error(error.response.data.message);
+//   } finally {
+//     set({ isSigningUp: false });
+//   }
+// },
+
+
+signup: async (data) => {
   set({ isSigningUp: true });
   try {
     const res = await axiosInstance.post("/auth/signup", data);
 
-    localStorage.setItem("token", res.data.token); // 🔥 ADD THIS
-
-    set({ authUser: res.data.user });
+    set({ authUser: res.data });
 
     toast.success("Account created successfully!");
 
-    get().connectSocket();
+    setTimeout(() => {
+      get().connectSocket();
+    }, 200);
+
   } catch (error) {
-    toast.error(error.response.data.message);
+    toast.error(error.response?.data?.message || "Signup failed");
   } finally {
     set({ isSigningUp: false });
   }
 },
 
 
-  login: async (data) => {
+//   login: async (data) => {
+//   set({ isLoggingIn: true });
+//   try {
+//     const res = await axiosInstance.post("/auth/login", data);
+
+//     // 🔥 SAVE TOKEN
+//     localStorage.setItem("token", res.data.token);
+
+//     set({ authUser: res.data.user });
+
+//     toast.success("Logged in successfully");
+
+//     get().connectSocket();
+//   } catch (error) {
+//     toast.error(error.response.data.message);
+//   } finally {
+//     set({ isLoggingIn: false });
+//   }
+// },
+
+
+// login: async (data) => {
+//   set({ isLoggingIn: true });
+//   try {
+//     // const res = await axiosInstance.post("/auth/login", data);
+
+
+// const res = await axiosInstance.post("/auth/login", data);
+
+// console.log("FULL RESPONSE:", res.data);
+
+//     // localStorage.setItem("token", res.data.token);
+
+//     set({ authUser: res.data.user });
+
+//     toast.success("Logged in successfully");
+
+//     get().connectSocket();
+
+//     return true; // ✅ added
+//   } catch (error) {
+//     toast.error(error.response.data.message);
+//     return false; // ✅ added
+//   } finally {
+//     set({ isLoggingIn: false });
+//   }
+// },
+  
+
+login: async (data) => {
   set({ isLoggingIn: true });
   try {
     const res = await axiosInstance.post("/auth/login", data);
 
-    // 🔥 SAVE TOKEN
-    localStorage.setItem("token", res.data.token);
+    // console.log("FULL RESPONSE:", res.data);
 
-    set({ authUser: res.data.user });
+    // ✅ FIX: set full user object correctly
+    set({ authUser: res.data });
 
     toast.success("Logged in successfully");
 
-    get().connectSocket();
+    // ✅ FIX: delay socket connection (VERY IMPORTANT)
+    setTimeout(() => {
+      get().connectSocket();
+    }, 200);
+
+    return true;
   } catch (error) {
-    toast.error(error.response.data.message);
+    toast.error(error.response?.data?.message || "Login failed");
+    return false;
   } finally {
     set({ isLoggingIn: false });
   }
 },
-
-  
 
   logout: async () => {
     try {
@@ -116,12 +190,12 @@ connectSocket: () => {
 
   if (get().socket?.connected) return;
 
-  const token = localStorage.getItem("token"); // 🔥 GET TOKEN
+  // const token = localStorage.getItem("token"); // 🔥 GET TOKEN
 
   const socket = io(BASE_URL, {
     transports: ["websocket"],
     auth: {
-      token, // 🔥 SEND TOKEN
+      // token, // 🔥 SEND TOKEN
     },
   });
 

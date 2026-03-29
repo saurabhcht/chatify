@@ -4,6 +4,7 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import { ENV } from "../lib/env.js";
 import cloudinary from "../lib/cloudinary.js";
+import jwt from "jsonwebtoken";
 // import"dotenv/config";
 
 export const signup = async (req, res) => {
@@ -97,8 +98,19 @@ export const login = async (req, res) => {
   }
 };
 
+// export const logout = (_, res) => {
+//   res.cookie("token", "", { maxAge: 0 });
+//   res.status(200).json({ message: "Logged out successfully" });
+// };
+
 export const logout = (_, res) => {
-  res.cookie("jwt", "", { maxAge: 0 });
+  res.cookie("token", "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: false, // change to true in production
+    expires: new Date(0),
+  });
+
   res.status(200).json({ message: "Logged out successfully" });
 };
 

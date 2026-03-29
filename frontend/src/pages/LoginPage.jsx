@@ -3,15 +3,26 @@ import { useAuthStore } from "../store/useAuthStore";
 import BorderAnimatedContainer from "../components/BorderAnimatedContainer";
 import { MessageCircleIcon, MailIcon, LoaderIcon, LockIcon } from "lucide-react";
 import { Link } from "react-router";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 function LoginPage() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const { login, isLoggingIn } = useAuthStore();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    login(formData);
-  };
+  const navigate = useNavigate();
+  const { authUser } = useAuthStore();
+
+  useEffect(() => {
+  if (authUser) {
+    navigate("/");
+  }
+}, [authUser, navigate]);
+
+const handleSubmit = (e) => {
+  e.preventDefault();
+  login(formData);
+};
 
   return (
     <div className="w-full flex items-center justify-center p-4 bg-slate-900">
