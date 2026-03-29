@@ -2,6 +2,7 @@ import cloudinary from "../lib/cloudinary.js";
 import { getReceiverSocketId, io } from "../lib/socket.js";
 import Message from "../models/Message.js";
 import User from "../models/User.js";
+import fs from "fs"; 
 
 export const getAllContacts = async (req, res) => {
   try {
@@ -212,18 +213,38 @@ export const sendMessage = async (req, res) => {
     let audioUrl;
 
     // ✅ IMAGE (Cloudinary)
+    // if (image) {
+    //   const uploadResponse = await cloudinary.uploader.upload(image);
+    //   imageUrl = uploadResponse.secure_url;
+    // }
+
     if (image) {
-      const uploadResponse = await cloudinary.uploader.upload(image);
-      imageUrl = uploadResponse.secure_url;
-    }
+  const uploadResponse = await cloudinary.uploader.upload(image, {
+    folder: "chatify/images",
+  });
+
+  imageUrl = uploadResponse.secure_url;
+}
 
     // ✅ AUDIO (Multer local upload)
-   if (req.file) {
+//    if (req.file) {
+//   const uploadResponse = await cloudinary.uploader.upload(req.file.path, {
+//     resource_type: "video", // ✅ IMPORTANT for audio
+//   });
+
+//   audioUrl = uploadResponse.secure_url;
+// }
+
+if (req.file) {
   const uploadResponse = await cloudinary.uploader.upload(req.file.path, {
-    resource_type: "video", // ✅ IMPORTANT for audio
+    resource_type: "video",
+    folder: "chatify/audio",   // optional but good
   });
 
   audioUrl = uploadResponse.secure_url;
+
+  // ✅ DELETE LOCAL FILE (VERY IMPORTANT)
+  fs.unlinkSync(req.file.path);
 }
 
     const newMessage = new Message({
