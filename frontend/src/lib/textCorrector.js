@@ -52,33 +52,9 @@
 //   }
 // };
 
-// export const correctText = async (text) => {
-//   try {
-//     const res = await fetch("https://chatify-backend-nwgb.onrender.com/api/correct", {
-//       method: "POST",
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//       body: JSON.stringify({ text }),
-//     });
-
-//     const data = await res.json();
-
-//     return data.corrected || text;
-//   } catch (err) {
-//     console.error(err);
-//     return text;
-//   }
-// };
-
 export const correctText = async (text) => {
   try {
-    const BASE_URL =
-      window.location.hostname === "localhost"
-        ? "http://localhost:3000"
-        : "https://chatify-backend-nwgb.onrender.com";
-
-    const res = await fetch(`${BASE_URL}/api/correct`, {
+    const res = await fetch("https://chatify-backend-nwgb.onrender.com/api/correct", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -94,3 +70,27 @@ export const correctText = async (text) => {
     return text;
   }
 };
+
+// export const correctText = async (text) => {
+//   try {
+//     const BASE_URL =
+//       window.location.hostname === "localhost"
+//         ? "http://localhost:3000"
+//         : "https://chatify-backend-nwgb.onrender.com";
+
+//     const res = await fetch(`${BASE_URL}/api/correct`, {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify({ text }),
+//     });
+
+//     const data = await res.json();
+
+//     return data.corrected || text;
+//   } catch (err) {
+//     console.error(err);
+//     return text;
+//   }
+// };
