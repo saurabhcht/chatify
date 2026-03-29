@@ -31,7 +31,7 @@ app.use("/uploads", express.static("uploads"));
 // }
 
 if (ENV.NODE_ENV === "production") {
-  const path = require("path");
+  // const path = require("path");
 
   const frontendPath = path.join(__dirname, "../frontend/dist");
 
