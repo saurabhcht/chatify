@@ -363,6 +363,7 @@ useEffect(() => {
           <div className="max-w-3xl mx-auto space-y-6">
 
             {messages.map((msg) => (
+              
               <div
                 key={msg._id}
                 className={`chat ${
@@ -389,7 +390,11 @@ useEffect(() => {
                   {msg.text && <p className="mt-2">{msg.text}</p>}
 
                   {/* AUDIO */}
-                  {msg.audio && <AudioMessage audio={msg.audio} />}
+                  {/* {msg.audio && <AudioMessage audio={msg.audio} />} */}
+                  {msg.audio && msg.audio.startsWith("http") && (
+  <AudioMessage audio={msg.audio} />
+)}
+
 
                   {/* EDIT / DELETE */}
                   {msg.senderId === authUser._id && (
